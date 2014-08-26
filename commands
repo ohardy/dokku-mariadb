@@ -55,7 +55,9 @@ if [[ -f "$HOME/admin_pw" ]]; then
   admin_pw=$(cat "$HOME/admin_pw")
 fi
 
-manage="docker run -t -i -v $HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
+_manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
+manage="docker run -t -i -v $_manage"
+manage2="docker run -v $_manage"
 
 case "$1" in
   mariadb:admin_console)
@@ -135,7 +137,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      docker run -v "$HOME/data":"/var/lib/mysql" "$db_image" init "$admin_pw"
+      $manage2 init "$admin_pw"
     fi
     ;;
 
