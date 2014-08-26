@@ -26,13 +26,15 @@ case "$1" in
   init)
     admin_pw=$2
 
-    mysqld_safe --skip-syslog --log-error=/var/log/mysql.err &
+    mysql="mysql -u root --password=temporary_password -h $ip -P $port mysql"
 
-    while [ ! -S /var/run/mysqld/mysqld.sock ]; do sleep 1; done
-    _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" "mysql -u root --password=temporary_password mysql"
-    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "mysql -u root --password=$admin_pw mysql"
-    _mysql "DELETE FROM mysql.user WHERE User='root' AND Host<>'%'; FLUSH PRIVILEGES;" "mysql -u root --password=$admin_pw mysql"
-    mysqladmin -u root --password=$admin_pw shutdown
+    _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" $mysql
+
+    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+
+    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
+    _mysql "DELETE FROM mysql.user WHERE User='root' AND Host<>'%'; FLUSH PRIVILEGES;" $mysql
+
   ;;
   create)
     name=$2

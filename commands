@@ -57,7 +57,7 @@ fi
 
 _manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
 manage="docker run -t -i -v $_manage"
-manage2="docker run -v $_manage"
+# manage2="docker run -v $_manage"
 
 case "$1" in
   mariadb:admin_console)
@@ -137,7 +137,10 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      $manage2 init "$admin_pw"
+      dokku mariadb:start
+      sleep 10
+      $manage init "$admin_pw"
+      dokku mariadb:stop
     fi
     ;;
 
