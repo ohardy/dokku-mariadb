@@ -7,11 +7,8 @@ ip=$DB_PORT_3306_TCP_ADDR
 port=$DB_PORT_3306_TCP_PORT
 
 _mysql () {
-  mysql=$2
-  cmd=$1
-
   #  echo "echo \"$cmd\" | $mysql"
-  echo $cmd | $mysql
+  echo $1 | $2
 }
 
 case "$1" in
@@ -28,14 +25,14 @@ case "$1" in
 
     mysql="mysql --protocol=tcp -u root --password=temporary_password -h $ip -P $port mysql"
 
-    _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" $mysql
+    _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" "$mysql"
 
     mysql="mysql --protocol=tcp -u root --password=$admin_pw -h $ip -P $port mysql"
 
-    _mysql "CREATE USER 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
-    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
-    _mysql "CREATE USER 'root'@'localhost' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
-    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'localhost' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
+    _mysql "CREATE USER 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "$mysql"
+    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "$mysql"
+    _mysql "CREATE USER 'root'@'localhost' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "$mysql"
+    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'localhost' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "$mysql"
     # _mysql "DELETE FROM mysql.user WHERE User='root' AND Host<>'%'; FLUSH PRIVILEGES;" $mysql
 
   ;;
