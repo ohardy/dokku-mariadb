@@ -146,11 +146,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      dokku mariadb:start
-      load_ip_and_container
-      sleep 10
       $manage init "$admin_pw"
-      dokku mariadb:stop
     fi
     ;;
 
