@@ -26,11 +26,11 @@ case "$1" in
   init)
     admin_pw=$2
 
-    mysql="mysql -u root --password=temporary_password -h $ip -P $port mysql"
+    mysql="mysql --protocol=tcp -u root --password=temporary_password -h $ip -P $port mysql"
 
     _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" $mysql
 
-    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+    mysql="mysql --protocol=tcp -u root --password=$admin_pw -h $ip -P $port mysql"
 
     _mysql "CREATE USER 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
     _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" $mysql
@@ -44,7 +44,7 @@ case "$1" in
     admin_pw=$3
     database_pw=$4
 
-    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+    mysql="mysql --protocol=tcp -u root --password=$admin_pw -h $ip -P $port mysql"
 
     _mysql "CREATE USER '$name'@'%' IDENTIFIED BY 'temporary_password';" "$mysql"
     _mysql "SET PASSWORD FOR '$name'@'%' = PASSWORD('$database_pw');" "$mysql"
@@ -55,7 +55,7 @@ case "$1" in
     name=$2
     admin_pw=$3
 
-    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+    mysql="mysql --protocol=tcp -u root --password=$admin_pw -h $ip -P $port mysql"
 
     _mysql "DROP USER '$name'@'%';" "$mysql"
     _mysql "DROP DATABASE $name;" "$mysql"
@@ -69,7 +69,7 @@ case "$1" in
   list)
     admin_pw=$2
 
-    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+    mysql="mysql --protocol=tcp -u root --password=$admin_pw -h $ip -P $port mysql"
 
     _mysql "SHOW DATABASES;" "$mysql"
   ;;
