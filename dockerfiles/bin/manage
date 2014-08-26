@@ -26,7 +26,7 @@ case "$1" in
     chown -R mysql:mysql /var/lib/mysql
     chmod -R 700 /var/lib/mysql
     mysqld_safe --skip-syslog --log-error=/var/log/mysql.err &
-
+    while [ ! -S /var/run/mysqld/mysqld.sock ]; do sleep 1; done
     mysql="mysql -u root --password=temporary_password mysql"
 
     _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" "$mysql"
