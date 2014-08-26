@@ -1,0 +1,96 @@
+#!/bin/bash
+#set -e;
+
+# ip=$(netstat -nr | grep '^0\.0\.0\.0' | awk '{print $2}')
+
+ip=$DB_PORT_3306_TCP_ADDR
+port=$DB_PORT_3306_TCP_PORT
+
+_mysql () {
+  mysql=$2
+  cmd=$1
+
+  #  echo "echo \"$cmd\" | $mysql"
+  echo $cmd | $mysql
+}
+
+case "$1" in
+  start)
+    chown -R mysql:mysql /var/lib/mysql
+    chmod -R 700 /var/lib/mysql
+    mysqld_safe --skip-syslog --log-error=/var/log/mysql.err &
+
+    tail -f /var/log/mysql.err
+  ;;
+
+  init)
+    admin_pw=$2
+
+    mysqld_safe --skip-syslog --log-error=/var/log/mysql.err &
+
+    while [ ! -S /var/run/mysqld/mysqld.sock ]; do sleep 1; done
+    _mysql "UPDATE mysql.user SET Password=PASSWORD('$admin_pw') WHERE User='root'; FLUSH PRIVILEGES;" "mysql -u root --password=temporary_password mysql"
+    _mysql "GRANT ALL PRIVILEGES ON *.* to 'root'@'%' IDENTIFIED BY '$admin_pw' WITH GRANT OPTION; FLUSH PRIVILEGES;" "mysql -u root --password=$admin_pw mysql"
+    _mysql "DELETE FROM mysql.user WHERE User='root' AND Host<>'%'; FLUSH PRIVILEGES;" "mysql -u root --password=$admin_pw mysql"
+    mysqladmin -u root --password=$admin_pw shutdown
+  ;;
+  create)
+    name=$2
+    admin_pw=$3
+    database_pw=$4
+
+    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+
+    _mysql "CREATE USER '$name'@'%' IDENTIFIED BY 'temporary_password';" "$mysql"
+    _mysql "SET PASSWORD FOR '$name'@'%' = PASSWORD('$database_pw');" "$mysql"
+    _mysql "CREATE DATABASE $name;" "$mysql"
+    _mysql "GRANT ALL PRIVILEGES ON $name.* to '$name'@'%';" "$mysql"
+  ;;
+  delete)
+    name=$2
+    admin_pw=$3
+
+    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+
+    _mysql "DROP USER '$name'@'%';" "$mysql"
+    _mysql "DROP DATABASE $name;" "$mysql"
+
+  ;;
+  admin_console)
+    admin_pw=$2
+
+    mysql -u root --password="$admin_pw" -h "$ip" -P "$port" mysql
+  ;;
+  list)
+    admin_pw=$2
+
+    mysql="mysql -u root --password=$admin_pw -h $ip -P $port mysql"
+
+    _mysql "SHOW DATABASES;" "$mysql"
+  ;;
+  dump)
+    name=$2
+    filename=$3
+    admin_pw=$4
+    mysqldump -u root --password="$admin_pw" -h "$ip" -P "$port" "$name" > "/shared/$filename"
+  ;;
+  restore)
+    name=$2
+    filename=$3
+    admin_pw=$4
+
+    mysql -u root --password="$admin_pw" -h "$ip" -P "$port" "$name" < "/shared/$filename"
+  ;;
+  console)
+    name=$2
+    database_pw=$3
+
+    mysql -u $name --password="$database_pw" -h "$ip" -P "$port" $name
+  ;;
+  bash)
+    bash
+  ;;
+  cmd)
+    bash -c "$2"
+  ;;
+esac

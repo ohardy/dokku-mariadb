@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [[ ! -z "$DOKKU_DEV" ]]; then
+  export DOKKU_DEV=true
+  export DOKKU_ROOT=/home/dokku
+
+  chmod +x commands
+  chmod +x install
+  chmod +x dockerfiles/bin/manage
+
+  ./commands mariadb:stop
+
+  docker rmi ohardy/mariadb
+  rm -rf /home/dokku/.o_mariadb
+  docker build --no-cache -t ohardy/mariadb dockerfiles/
+
+  ./install
+fi
