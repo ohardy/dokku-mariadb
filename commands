@@ -44,6 +44,7 @@ db_image="ohardy/mariadb"
 
 load_ip_and_container() {
   id=$(docker ps | grep "$db_image":latest | grep "manage start" | awk '{print $1}')
+  container_name=""
   if [[ -n "$id" ]]; then
     ip_and_port=$(docker port ${id} 3306)
     ip=$(echo "$ip_and_port" | cut -d ':' -f 1)
@@ -51,6 +52,13 @@ load_ip_and_container() {
     port=$(echo "$ip_and_port" | cut -d ':' -f 2)
     container_name=$(docker inspect -f "{{ .Name }}" $id)
   fi
+
+  if [[ -n "$container_name" ]]; then
+    _manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
+  else
+    _manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared $db_image"
+  fi
+  manage="docker run -t -i -v $_manage"
 }
 
 load_ip_and_container
@@ -59,10 +67,6 @@ admin_pw=""
 if [[ -f "$HOME/admin_pw" ]]; then
   admin_pw=$(cat "$HOME/admin_pw")
 fi
-
-_manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
-manage="docker run -t -i -v $_manage"
-# manage2="docker run -v $_manage"
 
 case "$1" in
   mariadb:admin_console)
