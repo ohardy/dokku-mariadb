@@ -1,4 +1,4 @@
-# PostgreSQL plugin for Dokku
+# MariaDB plugin for Dokku
 
 Project: https://github.com/progrium/dokku
 
