@@ -234,15 +234,15 @@ case "$1" in
     ;;
   help)
     cat && cat<<EOF
-    mariadb:console     <app>            Launch a postgresql console for a given app
-    mariadb:create      <app>            Create a Postgresql database
-    mariadb:delete      <app>            Delete specified Postgresql database
+    mariadb:console     <app>            Launch a MariaDB console for a given app
+    mariadb:create      <app>            Create a MariaDB database
+    mariadb:delete      <app>            Delete specified MariaDB database
     mariadb:dump        <app> <filename> Dump database to SQL format
     mariadb:restore     <app> <filename> Restore database from SQL format
-    mariadb:admin_console                Launch a postgresql console as admin user
-    mariadb:start                        Start the Postgresql docker container if it isn't running
-    mariadb:stop                         Stop the Postgresql docker container
-    mariadb:status                       Shows status of Postgresql
+    mariadb:admin_console                Launch a MariaDB console as admin user
+    mariadb:start                        Start the MariaDB docker container if it isn't running
+    mariadb:stop                         Stop the MariaDB docker container
+    mariadb:status                       Shows status of MariaDB
     mariadb:list                         List all databases
     mariadb:update                       Update this plugin
 EOF
