@@ -92,7 +92,7 @@ case "$1" in
 
     database_pw=$(cat "$HOME/pass_$APP")
 
-    echo "mysql://${APP}:${database_pw}@${private_ip}:${port}/${database}"
+    echo "mysql://${APP}:${database_pw}@172.17.42.1:${port}/${database}"
     ;;
   mariadb:create)
     check_container
@@ -106,7 +106,7 @@ case "$1" in
     $manage create "$database" "$admin_pw" "$new_password"
 
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-      dokku config:set "$APP" DATABASE_URL="mysql://${APP}:${new_password}@${private_ip}:${port}/${database}"
+      dokku config:set "$APP" DATABASE_URL="mysql://${APP}:${new_password}@172.17.42.1:${port}/${database}"
     fi
     ;;
 
@@ -138,7 +138,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" -v "$HOME/shared":"/shared" "$db_image" start
+      docker run -d -p 3306:3306 -v "$HOME/data":"/var/lib/mysql" -v "$HOME/shared":"/shared" "$db_image" start
     fi
     ;;
 
