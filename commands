@@ -92,7 +92,7 @@ case "$1" in
 
     database_pw=$(cat "$HOME/pass_$APP")
 
-    echo "mysql://${APP}:${database_pw}@${private_ip}:${port}/${database}"
+    echo "mysql2://${APP}:${database_pw}@${private_ip}:${port}/${database}"
     ;;
   mariadb:create)
     check_container
@@ -106,7 +106,7 @@ case "$1" in
     $manage create "$database" "$admin_pw" "$new_password"
 
     if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-      dokku config:set "$APP" DATABASE_URL="mysql://${APP}:${new_password}@${private_ip}:${port}/${database}"
+      dokku config:set "$APP" DATABASE_URL="mysql2://${APP}:${new_password}@${private_ip}:${port}/${database}"
     fi
     ;;
 
