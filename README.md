@@ -98,6 +98,12 @@ $ dokku mariadb:restore foo < filename.sql # Server side
 $ ssh dokku@server mariadb:restore foo < filename.sql # Client side
 ```
 
+### Copy database foo to database bar using pipe:
+```
+$ dokku mariadb:dump foo | dokku mariadb:restore bar # Server side
+```
+
+
 ## Link
 You can link a database to an application :
 
