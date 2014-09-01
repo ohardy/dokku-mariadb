@@ -284,10 +284,10 @@ case "$1" in
 
     database=$(cat "$HOME/db_$APP")
 
-    abspath=$(readlink -m $3)
-    name=$(basename $abspath)
+    name=$(openssl rand -base64 32|base64)
     manage dump "$database" "$name" "$admin_pw"
-    cp "$HOME/shared/$name" "$abspath"
+
+    cat "$HOME/shared/$name"
     rm -f "$HOME/shared/$name"
     ;;
 
@@ -298,9 +298,12 @@ case "$1" in
 
     database=$(cat "$HOME/db_$APP")
 
-    abspath=$(readlink -m $3)
-    name=$(basename $abspath)
-    cp "$abspath" "$HOME/shared/$name"
+    name=$(openssl rand -base64 32|base64)
+    while read -r line
+    do
+      echo "$line" >> "$HOME/shared/$name"
+    done
+
     manage restore "$database" "$name" "$admin_pw"
     rm -f "$HOME/shared/$name"
     ;;
@@ -404,8 +407,8 @@ case "$1" in
     mariadb:delete      <app>               Delete specified MariaDB database
     mariadb:link        <app> <another_app> Give environment variable of database of <app> to <another_app>
     mariadb:unlink      <another_app>       Unlink <another_app> to a database
-    mariadb:dump        <app> <filename>    Dump database to SQL format
-    mariadb:restore     <app> <filename>    Restore database from SQL format
+    mariadb:dump        <app> > <filename>  Dump database to SQL format
+    mariadb:restore     <app> < <filename>  Restore database from SQL format
     mariadb:admin_console                   Launch a MariaDB console as admin user
     mariadb:restart                         Restart the MariaDB docker container and linked app
     mariadb:start                           Start the MariaDB docker container if it isn't running

@@ -21,8 +21,8 @@ $ dokku help
     mariadb:delete      <app>               Delete specified MariaDB database
     mariadb:link        <app> <another_app> Give environment variable of database of <app> to <another_app>
     mariadb:unlink      <another_app>       Unlink <another_app> to a database
-    mariadb:dump        <app> <filename>    Dump database to SQL format
-    mariadb:restore     <app> <filename>    Restore database from SQL format
+    mariadb:dump        <app> > <filename>  Dump database to SQL format
+    mariadb:restore     <app> < <filename>  Restore database from SQL format
     mariadb:admin_console                   Launch a MariaDB console as admin user
     mariadb:restart                         Restart the MariaDB docker container and linked app
     mariadb:start                           Start the MariaDB docker container if it isn't running
@@ -86,12 +86,16 @@ $ ssh dokku@server mariadb:create foo # Client side
 
 ### Dump database to SQL:
 ```
-$ dokku mariadb:dump foo filename.sql # Server side
+$ dokku mariadb:dump foo > filename.sql # Server side
+..or..
+$ ssh dokku@server mariadb:dump foo > filename.sql # Client side
 ```
 
 ### Restore database from SQL:
 ```
-$ dokku mariadb:restore foo filename.sql # Server side
+$ dokku mariadb:restore foo < filename.sql # Server side
+..or..
+$ ssh dokku@server mariadb:restore foo < filename.sql # Client side
 ```
 
 ## Link
