@@ -2,21 +2,22 @@
 #set -e;
 
 _path=".o_mariadb"
+version="1.1"
+db_image="ohardy/mariadb"
 
 APP=$2
-
 OLDHOME=$HOME
 HOME="$DOKKU_ROOT/$_path"
 
 check_already_exists() {
-  if [[ -f "$HOME/pass_$APP" ]]; then
+  if [[ -f "$HOME/db_$APP" ]]; then
     echo "Database configured already exists with name : $APP"
     exit 1
   fi
 }
 
 check_exists() {
-  if [[ ! -f "$HOME/pass_$APP" ]]; then
+  if [[ ! -f "$HOME/db_$APP" ]]&&[[ ! -f "$HOME/link_$APP" ]]; then
     echo "No database configured with name : $APP"
     exit 1
   fi
@@ -36,12 +37,6 @@ check_container() {
   fi
 }
 
-database="${APP}"
-
-db_image="ohardy/mariadb"
-
-
-
 load_ip_and_container() {
   id=$(docker ps | grep "$db_image":latest | grep "manage start" | awk '{print $1}')
   container_name=""
@@ -54,11 +49,109 @@ load_ip_and_container() {
   fi
 
   if [[ -n "$container_name" ]]; then
-    _manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared --link $container_name:db $db_image"
+    _manage="-v $HOME/shared:/shared --link $container_name:db $db_image"
   else
-    _manage="$HOME/data:/var/lib/mysql -v $HOME/shared:/shared $db_image"
+    _manage="-v $HOME/shared:/shared $db_image"
   fi
-  manage="docker run -t -i -v $_manage"
+}
+
+manage() {
+  docker run -t -i $_manage $*
+}
+
+do_bash() {
+  _envs=$(env_for)
+  _cmd="docker run -t -i $_envs $db_image bash"
+  echo "$_cmd"
+  $_cmd
+}
+
+db_url() {
+  _app=$1
+
+  _database=$(cat "$HOME/db_$_app")
+  _database_pw=$(cat "$HOME/pass_$_app")
+
+  echo "mysql2://${_database}:${_database_pw}@${private_ip}:${port}/${_database}"
+}
+
+database_name() {
+  echo "$1" | cut -c 1-16 | tr .- _
+}
+
+migrate() {
+  if [[ ! -f "$HOME/version" ]]; then
+    cd "$HOME"
+    _files=$(ls pass_* 2> /dev/null)
+    for f in $_files; do
+      _app_to_migrate=$(echo "$f" | cut -d _ -f 2)
+      _database=$(database_name "$_app_to_migrate")
+      echo "$_database" > "$HOME/db_$_app_to_migrate"
+
+      if [[ -d "$DOKKU_ROOT/$_app_to_migrate" ]]; then
+        dokku config:unset "$_app_to_migrate" DATABASE_URL
+      fi
+    done
+
+    echo "$version" > "$HOME/version"
+  fi
+}
+
+env_for() {
+  if [[ -n "$1" ]]; then
+    _app=$1
+    if [[ -f "$HOME/db_$_app" ]]; then
+      _url=$(db_url "$APP")
+    elif [[ -f "$HOME/link_$_app" ]]; then
+      _app=$(cat "$HOME/link_$_app")
+      _url=$(db_url "$_app")
+    fi
+
+    if [[ -n "$_url" ]]; then
+      if [[ -f "$HOME/db_$_app" ]]&&[[ -f "$HOME/pass_$_app" ]]; then
+        _database=$(cat "$HOME/db_$_app")
+        _database_pw=$(cat "$HOME/pass_$_app")
+
+        echo "-e DATABASE_URL=$_url -e MARIADB_URL=$_url -e DB_TYPE=mysql -e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=$_database -e DB_PASS=$_database_pw"
+      fi
+    fi
+  else
+    _database="mysql"
+    _database_pw=$(cat "$HOME/admin_pw")
+
+    echo "-e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=root -e DB_PASS=$_database_pw"
+
+  fi
+}
+
+restart_app() {
+  _app=$1
+  if [[ -n "$_app" ]]&&[[ -d "$DOKKU_ROOT/$_app" ]]; then
+    echo "-----> Restarting application : $_app"
+    dokku release $_app
+    dokku deploy $_app
+  fi
+}
+
+restart_apps() {
+  echo "-----> Restarting applications"
+  _apps=()
+
+  cd "$HOME"
+  _files=$(ls pass_* 2> /dev/null)
+  for f in $_files; do
+    _apps+=($(echo "$f" | cut -d _ -f 2))
+  done
+
+  _files=$(ls link_* 2> /dev/null)
+  for f in $_files; do
+    _apps+=($(cat "$HOME/$f"))
+  done
+
+  _apps=$(echo "${_apps[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+  for _app in $_apps; do
+    restart_app $_app
+  done
 }
 
 load_ip_and_container
@@ -72,7 +165,7 @@ case "$1" in
   mariadb:admin_console)
     check_container
 
-    $manage admin_console "$admin_pw"
+    manage admin_console "$admin_pw"
     ;;
 
   mariadb:console)
@@ -80,9 +173,10 @@ case "$1" in
     check_app
     check_exists
 
+    database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
 
-    $manage console "$database" "$database_pw"
+    manage console "$database" "$database_pw"
     ;;
 
   mariadb:url)
@@ -90,9 +184,12 @@ case "$1" in
     check_app
     check_exists
 
-    database_pw=$(cat "$HOME/pass_$APP")
-
-    echo "mysql2://${APP}:${database_pw}@${private_ip}:${port}/${database}"
+    if [[ -f "$HOME/db_$APP" ]]; then
+      db_url "$APP"
+    elif [[ -f "$HOME/link_$APP" ]]; then
+      APP=$(cat "$HOME/link_$APP")
+      db_url "$APP"
+    fi
     ;;
   mariadb:create)
     check_container
@@ -100,45 +197,69 @@ case "$1" in
     check_already_exists
 
     new_password=$(openssl rand -base64 32|base64)
+    database=$(database_name "$APP")
+    echo $database > "$HOME/db_$APP"
     echo $new_password > "$HOME/pass_$APP"
+    chmod 700 "$HOME/db_$APP"
     chmod 700 "$HOME/pass_$APP"
 
-    $manage create "$database" "$admin_pw" "$new_password"
-
-    if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-      dokku config:set "$APP" DATABASE_URL="mysql2://${APP}:${new_password}@${private_ip}:${port}/${database}"
-    fi
+    manage create "$database" "$admin_pw" "$new_password"
     ;;
-
   mariadb:delete)
     check_container
     check_app
     check_exists
 
-    $manage delete "$database" "$admin_pw"
+    database=$(cat "$HOME/db_$APP")
+    manage delete "$database" "$admin_pw"
 
+    rm -f "$HOME/db_$APP"
     rm -f "$HOME/pass_$APP"
 
-    if [[ -d "$DOKKU_ROOT/$APP" ]]; then
-      dokku config:unset "$APP" DATABASE_URL
-    fi
     ;;
 
   mariadb:list)
     check_container
 
-    $manage list "$admin_pw"
+    manage list "$admin_pw"
     ;;
 
   mariadb:bash)
-    $manage bash
+    do_bash
+    ;;
+
+  mariadb:pre_build)
+    if [[ -z "$id" ]]; then
+      if [[ -d "$DOKKU_ROOT/$APP" ]]; then
+        if [[ -n "$DOKKU_DEV" ]]; then
+          ./commands mariadb:start
+        else
+          dokku mariadb:start
+        fi
+
+        sleep 5
+      fi
+    fi
+
     ;;
 
   mariadb:start)
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" -v "$HOME/shared":"/shared" "$db_image" start
+      echo "-----> Starting MariaDB server"
+      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" "$db_image" start
+    fi
+    restart_apps
+    ;;
+
+  mariadb:restart)
+    if [[ ! -z "$DOKKU_DEV" ]]; then
+      ./commands mariadb:stop
+      ./commands mariadb:start
+    else
+      dokku mariadb:stop
+      dokku mariadb:start
     fi
     ;;
 
@@ -146,12 +267,13 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      $manage init "$admin_pw"
+      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" "$db_image" init "$admin_pw"
     fi
     ;;
 
   mariadb:stop)
     check_container
+    echo "-----> Stopping MariaDB server"
     docker stop ${id}
     ;;
 
@@ -160,9 +282,11 @@ case "$1" in
     check_app
     check_exists
 
+    database=$(cat "$HOME/db_$APP")
+
     abspath=$(readlink -m $3)
     name=$(basename $abspath)
-    $manage dump "$database" "$name" "$admin_pw"
+    manage dump "$database" "$name" "$admin_pw"
     cp "$HOME/shared/$name" "$abspath"
     rm -f "$HOME/shared/$name"
     ;;
@@ -172,10 +296,12 @@ case "$1" in
     check_app
     check_exists
 
+    database=$(cat "$HOME/db_$APP")
+
     abspath=$(readlink -m $3)
     name=$(basename $abspath)
     cp "$abspath" "$HOME/shared/$name"
-    $manage restore "$database" "$name" "$admin_pw"
+    manage restore "$database" "$name" "$admin_pw"
     rm -f "$HOME/shared/$name"
     ;;
 
@@ -187,14 +313,50 @@ case "$1" in
     fi
     ;;
 
+  mariadb:migrate)
+    migrate
+    ;;
+
+  mariadb:link)
+    check_container
+    check_app
+    check_exists
+
+    if [[ ! -f "$HOME/link_$3" ]]; then
+      echo "$APP" > "$HOME/link_$3"
+
+      restart_app $3
+    else
+      echo "A link already exist for $3"
+    fi
+    ;;
+
+  mariadb:unlink)
+    check_container
+    check_app
+    check_exists
+
+    if [[ -f "$HOME/link_$APP" ]]; then
+      rm -f "$HOME/link_$APP"
+    fi
+
+    restart_app $APP
+    ;;
+  mariadb:env)
+    env_for $APP
+    ;;
+
   mariadb:install)
     if [[ -d "$HOME" ]]; then
+      migrate
       echo "Mariadb data already exist in "$HOME", installation aborded "
     fi
 
     if [[ ! -d "$HOME" ]]; then
       mkdir -p "$HOME/data"
       mkdir -p "$HOME/shared"
+
+      echo "$version" > "$HOME/version"
 
       docker run "$db_image" cmd "cd /var/lib/mysql && tar -cp ./" | tar -x -C "$HOME/data/" -f -
       docker run "$db_image" cmd "rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql"
@@ -216,7 +378,7 @@ case "$1" in
       fi
     fi
     ;;
-  psql:update)
+  mariadb:update)
     if [[ $(id -un) = "dokku" ]]; then
       dokku plugins-update
     fi
@@ -224,27 +386,34 @@ case "$1" in
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     if [[ -d "$DIR/.git" ]]; then
       pushd "$DIR"
-      dokku psql:stop
+      dokku mariadb:stop
       sudo git pull
       docker rmi "$db_image"
       docker pull "$db_image"
-      dokku psql:start
+      dokku mariadb:migrate
+      dokku mariadb:start
       popd
     fi
     ;;
   help)
     cat && cat<<EOF
-    mariadb:console     <app>            Launch a MariaDB console for a given app
-    mariadb:create      <app>            Create a MariaDB database
-    mariadb:delete      <app>            Delete specified MariaDB database
-    mariadb:dump        <app> <filename> Dump database to SQL format
-    mariadb:restore     <app> <filename> Restore database from SQL format
-    mariadb:admin_console                Launch a MariaDB console as admin user
-    mariadb:start                        Start the MariaDB docker container if it isn't running
-    mariadb:stop                         Stop the MariaDB docker container
-    mariadb:status                       Shows status of MariaDB
-    mariadb:list                         List all databases
-    mariadb:update                       Update this plugin
+    mariadb:console     <app>               Launch a MariaDB console for a given app
+    mariadb:env         <app>               Get generated environment variables for <app>
+    mariadb:url         <app>               Get DATABASE_URL for <app>
+    mariadb:create      <app>               Create a MariaDB database
+    mariadb:delete      <app>               Delete specified MariaDB database
+    mariadb:link        <app> <another_app> Give environment variable of database of <app> to <another_app>
+    mariadb:unlink      <another_app>       Unlink <another_app> to a database
+    mariadb:dump        <app> <filename>    Dump database to SQL format
+    mariadb:restore     <app> <filename>    Restore database from SQL format
+    mariadb:admin_console                   Launch a MariaDB console as admin user
+    mariadb:restart                         Restart the MariaDB docker container and linked app
+    mariadb:start                           Start the MariaDB docker container if it isn't running
+    mariadb:stop                            Stop the MariaDB docker container
+    mariadb:status                          Shows status of MariaDB
+    mariadb:list                            List all databases
+    mariadb:update                          Update this plugin
+    mariadb:migrate                         Migrate
 EOF
     ;;
 esac

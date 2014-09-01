@@ -14,17 +14,42 @@ dokku plugins-install
 ## Commands
 ```
 $ dokku help
-    mariadb:console     <app>            Launch a mariadb console for a given app
-    mariadb:create      <app>            Create a Mariadb database
-    mariadb:delete      <app>            Delete specified Mariadb database
-    mariadb:dump        <app> <filename> Dump database to SQL format
-    mariadb:restore     <app> <filename> Restore database from SQL format
-    mariadb:admin_console                Launch a mariadb console as admin user
-    mariadb:start                        Start the Mariadb docker container if it isn't running
-    mariadb:stop                         Stop the Mariadb docker container
-    mariadb:status                       Shows status of Mariadb
-    mariadb:list                         List all databases
+    mariadb:console     <app>               Launch a MariaDB console for a given app
+    mariadb:env         <app>               Get generated environment variables for <app>
+    mariadb:url         <app>               Get DATABASE_URL for <app>
+    mariadb:create      <app>               Create a MariaDB database
+    mariadb:delete      <app>               Delete specified MariaDB database
+    mariadb:link        <app> <another_app> Give environment variable of database of <app> to <another_app>
+    mariadb:unlink      <another_app>       Unlink <another_app> to a database
+    mariadb:dump        <app> <filename>    Dump database to SQL format
+    mariadb:restore     <app> <filename>    Restore database from SQL format
+    mariadb:admin_console                   Launch a MariaDB console as admin user
+    mariadb:restart                         Restart the MariaDB docker container and linked app
+    mariadb:start                           Start the MariaDB docker container if it isn't running
+    mariadb:stop                            Stop the MariaDB docker container
+    mariadb:status                          Shows status of MariaDB
+    mariadb:list                            List all databases
+    mariadb:update                          Update this plugin
+    mariadb:migrate                         Migrate
 ```
+
+## Updating this plugin
+Dokku doesn't handle plugin update. I made a pull request to dokku for that (https://github.com/progrium/dokku/pull/669)
+
+So, each time you update this plugin with `git pull`, you need to call:
+```
+$ dokku mariadb:migrate
+```
+
+## Info
+This plugin adds following environment variables to your app automatically:
+
+* DATABASE_URL
+* DB_HOST
+* DB_PORT
+* DB_NAME
+* DB_USER
+* DB_PASS
 
 ## Usage
 
@@ -33,6 +58,22 @@ $ dokku help
 $ dokku mariadb:start                 # Server side
 ..or..
 $ ssh dokku@server mariadb:start      # Client side
+
+```
+
+### Stop Mariadb:
+```
+$ dokku mariadb:stop                 # Server side
+..or..
+$ ssh dokku@server mariadb:stop      # Client side
+
+```
+
+### Restart Mariadb:
+```
+$ dokku mariadb:restart                 # Server side
+..or..
+$ ssh dokku@server mariadb:restart      # Client side
 
 ```
 
@@ -51,4 +92,22 @@ $ dokku mariadb:dump foo filename.sql # Server side
 ### Restore database from SQL:
 ```
 $ dokku mariadb:restore foo filename.sql # Server side
+```
+
+## Link
+You can link a database to an application :
+
+- Create database:
+```
+$ dokku mariadb:create foo
+```
+- Push another_app to dokku and link it to foo with:
+```
+$ dokku mariadb:link foo another_app
+```
+- Environment variables for database foo will be available in another_app
+
+## Unlink
+```
+$ dokku mariadb:unlink another_app # Server side
 ```
