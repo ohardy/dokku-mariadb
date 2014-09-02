@@ -62,7 +62,6 @@ manage() {
 do_bash() {
   _envs=$(env_for)
   _cmd="docker run -t -i $_envs $db_image bash"
-  echo "$_cmd"
   $_cmd
 }
 
