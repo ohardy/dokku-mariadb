@@ -55,8 +55,12 @@ load_ip_and_container() {
   fi
 }
 
-manage() {
+manage_ti() {
   docker run -t -i $_manage $*
+}
+
+manage() {
+  docker run $_manage $*
 }
 
 do_bash() {
@@ -164,7 +168,7 @@ case "$1" in
   mariadb:admin_console)
     check_container
 
-    manage admin_console "$admin_pw"
+    manage_ti admin_console "$admin_pw"
     ;;
 
   mariadb:console)
@@ -175,7 +179,7 @@ case "$1" in
     database=$(cat "$HOME/db_$APP")
     database_pw=$(cat "$HOME/pass_$APP")
 
-    manage console "$database" "$database_pw"
+    manage_ti console "$database" "$database_pw"
     ;;
 
   mariadb:url)
