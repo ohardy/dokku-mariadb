@@ -92,8 +92,8 @@ migrate() {
       fi
     done
 
-    echo "$version" > "$HOME/version"
   fi
+  echo "$version" > "$HOME/version"
 }
 
 env_for() {
