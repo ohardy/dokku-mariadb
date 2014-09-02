@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+shopt -s nullglob
+VERSION="$1"
+BASE_DIR="$2"
+
+_path=".o_mariadb"
+_plugin_path="$BASE_DIR/$_path"
+# Generate dump for each app
+
+cd $_plugin_path
+mkdir -p "$_plugin_path/backup"
+_files=$(ls db_* 2> /dev/null)
+
+# _paths=""
+
+for f in $_files; do
+  _app=($(echo "$f" | cut -d _ -f 2))
+  if [[ -n $_app ]]; then
+    dokku mariadb:dump $_app > $_plugin_path/backup/$_app.sql
+  fi
+done
+
+cat; for f in $(find . -name '*' -not -path "./data/*" -nowarn 2>/dev/null); do echo $(readlink -m $f); done
