@@ -21,4 +21,4 @@ for f in $_files; do
   fi
 done
 
-cat; for f in $(find . -name '*' -not -path "./data/*" -nowarn 2>/dev/null); do echo $(readlink -m $f); done
+cat; for f in $(find . -name '*' -and -not -path "./data*" -nowarn 2>/dev/null); do echo $(readlink -m $f); done
