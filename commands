@@ -286,8 +286,10 @@ case "$1" in
     name=$(openssl rand -base64 32|base64)
     manage dump "$database" "$name" "$admin_pw"
 
-    cat "$HOME/shared/$name"
-    rm -f "$HOME/shared/$name"
+    if [[ -f "$HOME/shared/$name" ]]; then
+      cat "$HOME/shared/$name"
+      rm -f "$HOME/shared/$name"
+    fi
     ;;
 
   mariadb:restore)
