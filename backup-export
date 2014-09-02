@@ -10,11 +10,10 @@ _plugin_path="$BASE_DIR/$_path"
 
 cd $_plugin_path
 mkdir -p "$_plugin_path/backup"
-_files=$(ls db_* 2> /dev/null)
 
 # _paths=""
 
-for f in $_files; do
+for f in db_*; do
   _app=($(echo "$f" | cut -d _ -f 2))
   if [[ -n $_app ]]; then
     "$DIR/commands" mariadb:dump $_app > $_plugin_path/backup/$_app.sql
