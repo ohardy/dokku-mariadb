@@ -368,8 +368,7 @@ case "$1" in
         admin_pw=$(openssl rand -base64 32|base64)
         echo $admin_pw > "$HOME/admin_pw"
 
-        chown dokku: "$HOME"
-        chown dokku: "$HOME/admin_pw"
+        chown -R dokku: "$HOME"
         chmod 700 "$HOME/admin_pw"
 
         if [[ ! -z "$DOKKU_DEV" ]]; then
