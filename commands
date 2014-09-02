@@ -298,10 +298,7 @@ case "$1" in
     database=$(cat "$HOME/db_$APP")
 
     name=$(openssl rand -base64 32|base64)
-    while read -r line
-    do
-      echo "$line" >> "$HOME/shared/$name"
-    done
+    cat - > "$HOME/shared/$name"
 
     manage restore "$database" "$name" "$admin_pw"
     rm -f "$HOME/shared/$name"
