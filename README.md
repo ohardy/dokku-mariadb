@@ -33,14 +33,6 @@ $ dokku help
     mariadb:migrate                         Migrate
 ```
 
-## Updating this plugin
-Dokku doesn't handle plugin update. I made a pull request to dokku for that (https://github.com/progrium/dokku/pull/669)
-
-So, each time you update this plugin with `git pull`, you need to call:
-```
-$ dokku mariadb:migrate
-```
-
 ## Info
 This plugin adds following environment variables to your app automatically:
 
