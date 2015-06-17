@@ -329,7 +329,9 @@ case "$1" in
 
     if [[ ! -f "$HOME/link_$3" ]]; then
       echo "$APP" > "$HOME/link_$3"
-
+      _database=$(cat "$HOME/db_$2")
+      _database_pw=$(cat "$HOME/pass_$2")
+      dokku config:set $3 "DB_HOST=$private_ip" "DB_PASSWORD=$_database_pw" "DB_NAME=$_database" "DB_PORT=$port" "DB_USER=$_database"
       restart_app $3
     else
       echo "A link already exist for $3"
