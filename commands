@@ -2,8 +2,8 @@
 #set -e;
 
 _path=".o_mariadb"
-version="1.3"
-db_image="ohardy/mariadb"
+version="1.4"
+db_image="ohardy/mariadb:latest"
 
 APP=$2
 OLDHOME=$HOME
@@ -38,7 +38,7 @@ check_container() {
 }
 
 load_ip_and_container() {
-  id=$(docker ps | grep "$db_image":latest | grep "manage start" | awk '{print $1}')
+  id=$(docker ps | grep "$db_image" | grep "manage start" | awk '{print $1}')
   container_name=""
   if [[ -n "$id" ]]; then
     ip_and_port=$(docker port ${id} 3306)
