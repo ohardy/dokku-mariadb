@@ -277,6 +277,7 @@ case "$1" in
   mariadb:stop)
     check_container
     echo "-----> Stopping MariaDB server"
+    manage shutdown "$admin_pw"
     docker stop ${id}
     ;;
 
@@ -313,6 +314,7 @@ case "$1" in
   mariadb:status)
     if [[ "$id" != "" ]]; then
       echo "Mariadb container running with ID: ${id}"
+      manage status "$admin_pw"
     else
       echo "Mariadb container not running"
     fi

@@ -69,6 +69,16 @@ case "$1" in
 
     mysql -u root --password="$admin_pw" -h "$ip" -P "$port" mysql
   ;;
+  status)
+    admin_pw=$2
+
+    mysqladmin -u root --password=$admin_pw status
+  ;;
+  shutdown)
+    admin_pw=$2
+
+    mysqladmin -u root --password=$admin_pw -h $ip -P $port shutdown
+  ;;
   list)
     admin_pw=$2
 
