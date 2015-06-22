@@ -72,7 +72,7 @@ case "$1" in
   status)
     admin_pw=$2
 
-    mysqladmin -u root --password=$admin_pw status
+    mysqladmin -u root --password=$admin_pw -h $ip -P $port status
   ;;
   shutdown)
     admin_pw=$2
