@@ -43,7 +43,7 @@ load_ip_and_container() {
   if [[ -n "$id" ]]; then
     ip_and_port=$(docker port ${id} 3306)
     ip=$(echo "$ip_and_port" | cut -d ':' -f 1)
-    private_ip=$(docker inspect ${id} | grep IPAddress | awk '{ print $2 }' | tr -d ',"')
+    private_ip=$(docker inspect ${id} | grep \"IPAddress\" | awk '{ print $2 }' | tr -d ',"')
     port=$(echo "$ip_and_port" | cut -d ':' -f 2)
     container_name=$(docker inspect -f "{{ .Name }}" $id)
   fi
