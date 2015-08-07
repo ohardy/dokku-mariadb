@@ -331,7 +331,7 @@ case "$1" in
       echo "$APP" > "$HOME/link_$3"
       _database=$(cat "$HOME/db_$2")
       _database_pw=$(cat "$HOME/pass_$2")
-      dokku config:set $3 "DB_HOST=$private_ip" "DB_PASSWORD=$_database_pw" "DB_NAME=$_database" "DB_PORT=$port" "DB_USER=$_database"
+      dokku config:set $3 "DB_HOST=$private_ip" "DB_PASS=$_database_pw" "DB_NAME=$_database" "DB_PORT=$port" "DB_USER=$_database" "DATABASE_URL=mysql://$_database:$_database_pw@$_private_ip:$port/$_database"
       restart_app $3
     else
       echo "A link already exist for $3"
