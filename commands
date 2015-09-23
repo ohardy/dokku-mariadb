@@ -155,7 +155,7 @@ restart_apps() {
   done
 }
 
-load_ip_and_container
+[[ " mariadb:install help mariadb:help " == *" $1 "* ]] || load_ip_and_container
 
 admin_pw=""
 if [[ -f "$MARIADB_HOME/admin_pw" ]]; then
