@@ -404,25 +404,25 @@ case "$1" in
     fi
     ;;
 
-  help)
+  help | mariadb:help)
     HELP=$(cat<<EOF
-    mariadb:console     <app>               Launch a MariaDB console for a given app
-    mariadb:env         <app>               Get generated environment variables for <app>
-    mariadb:url         <app>               Get DATABASE_URL for <app>
-    mariadb:create      <app>               Create a MariaDB database
-    mariadb:delete      <app>               Delete specified MariaDB database
-    mariadb:link        <app> <another_app> Give environment variable of database of <app> to <another_app>
-    mariadb:unlink      <another_app>       Unlink <another_app> to a database
-    mariadb:dump        <app> > <filename>  Dump database to SQL format
-    mariadb:restore     <app> < <filename>  Restore database from SQL format
-    mariadb:admin_console                   Launch a MariaDB console as admin user
-    mariadb:restart                         Restart the MariaDB docker container and linked app
-    mariadb:start                           Start the MariaDB docker container if it isn't running
-    mariadb:stop                            Stop the MariaDB docker container
-    mariadb:status                          Shows status of MariaDB
-    mariadb:list                            List all databases
-    mariadb:update                          Update this plugin
-    mariadb:migrate                         Migrate
+    mariadb:console <app>, Launch a MariaDB console for a given app
+    mariadb:env <app>, Get generated environment variables for <app>
+    mariadb:url <app>, Get DATABASE_URL for <app>
+    mariadb:create <app>, Create a MariaDB database
+    mariadb:delete <app>, Delete specified MariaDB database
+    mariadb:link <app> <another_app>, Give environment variable of database of <app> to <another_app>
+    mariadb:unlink <another_app>, Unlink <another_app> to a database
+    mariadb:dump <app> > <filename>, Dump database to SQL format
+    mariadb:restore <app> < <filename>, Restore database from SQL format
+    mariadb:admin_console, Launch a MariaDB console as admin user
+    mariadb:restart, Restart the MariaDB docker container and linked app
+    mariadb:start, Start the MariaDB docker container if it isn't running
+    mariadb:stop, Stop the MariaDB docker container
+    mariadb:status, Shows status of MariaDB
+    mariadb:list, List all databases
+    mariadb:update, Update this plugin
+    mariadb:migrate, Migrate
 EOF
 )
     if [[ -n $DOKKU_API_VERSION ]]; then
