@@ -1,5 +1,5 @@
-#!/bin/bash
-#set -e;
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 _path=".o_mariadb"
 version="1.4"
@@ -192,6 +192,7 @@ case "$1" in
       db_url "$APP"
     fi
     ;;
+
   mariadb:create)
     check_container
     check_app
@@ -206,6 +207,7 @@ case "$1" in
 
     manage create "$database" "$admin_pw" "$new_password"
     ;;
+
   mariadb:delete)
     check_container
     check_app
@@ -347,6 +349,7 @@ case "$1" in
 
     restart_app $APP
     ;;
+
   mariadb:env)
     env_for $APP
     ;;
@@ -382,6 +385,7 @@ case "$1" in
       fi
     fi
     ;;
+
   mariadb:update)
     if [[ $(id -un) = "dokku" ]]; then
       dokku plugins-update
@@ -399,8 +403,9 @@ case "$1" in
       popd
     fi
     ;;
+
   help)
-    cat && cat<<EOF
+    HELP=$(cat<<EOF
     mariadb:console     <app>               Launch a MariaDB console for a given app
     mariadb:env         <app>               Get generated environment variables for <app>
     mariadb:url         <app>               Get DATABASE_URL for <app>
@@ -419,5 +424,16 @@ case "$1" in
     mariadb:update                          Update this plugin
     mariadb:migrate                         Migrate
 EOF
+)
+    if [[ -n $DOKKU_API_VERSION ]]; then
+      echo "$HELP"
+    else
+      cat && echo "$HELP"
+    fi
     ;;
+
+  *)
+    exit "$DOKKU_NOT_IMPLEMENTED_EXIT"
+    ;;
+
 esac

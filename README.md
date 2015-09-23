@@ -1,17 +1,26 @@
-# MariaDB plugin for Dokku
+# dokku-mariadb [![Build Status](https://img.shields.io/travis/ohardy/dokku-name.svg?branch=master "Build Status")](https://travis-ci.org/ohardy/dokku-mariadb)
 
-Project: https://github.com/progrium/dokku
+a single-container mariadb plugin for dokku
 
-## Installation
+## requirements
 
-```
+- dokku 0.4.0+
+- docker 1.8.x
+
+## installation
+
+```shell
+# on 0.3.x
 cd /var/lib/dokku/plugins
-git clone https://github.com/ohardy/dokku-mariadb mariadb
+git clone https://github.com/ohardy/dokku-mariadb.git mariadb
 dokku plugins-install
+
+# on 0.4.x
+dokku plugin:install https://github.com/ohardy/dokku-mariadb.git mariadb
 ```
 
+## commands
 
-## Commands
 ```
 $ dokku help
     mariadb:console     <app>               Launch a MariaDB console for a given app

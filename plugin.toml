@@ -1,0 +1,4 @@
+[plugin]
+description = "manages a mariadb container"
+version = "2.0.0"
+[plugin.config]

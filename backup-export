@@ -19,4 +19,4 @@ for f in db_*; do
   fi
 done
 
-cat; for f in $(find . -name '*' -and -not -path "./data*" -and -not -name . -nowarn 2>/dev/null); do echo $(readlink -m $f); done
+cat; for f in $(find . -name '*' -and -not -path "./data*" -and -not -name . -nowarn 2>/dev/null); do echo readlink -m $f; done
