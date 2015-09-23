@@ -6,18 +6,17 @@ version="1.4"
 db_image="ohardy/mariadb:latest"
 
 APP=$2
-OLDHOME=$HOME
-HOME="$DOKKU_ROOT/$_path"
+MARIADB_HOME="$DOKKU_ROOT/$_path"
 
 check_already_exists() {
-  if [[ -f "$HOME/db_$APP" ]]; then
+  if [[ -f "$MARIADB_HOME/db_$APP" ]]; then
     echo "Database configured already exists with name : $APP"
     exit 1
   fi
 }
 
 check_exists() {
-  if [[ ! -f "$HOME/db_$APP" ]]&&[[ ! -f "$HOME/link_$APP" ]]; then
+  if [[ ! -f "$MARIADB_HOME/db_$APP" ]]&&[[ ! -f "$MARIADB_HOME/link_$APP" ]]; then
     echo "No database configured with name : $APP"
     exit 1
   fi
@@ -49,9 +48,9 @@ load_ip_and_container() {
   fi
 
   if [[ -n "$container_name" ]]; then
-    _manage="-v $HOME/shared:/shared --link $container_name:db $db_image"
+    _manage="-v $MARIADB_HOME/shared:/shared --link $container_name:db $db_image"
   else
-    _manage="-v $HOME/shared:/shared $db_image"
+    _manage="-v $MARIADB_HOME/shared:/shared $db_image"
   fi
 }
 
@@ -72,8 +71,8 @@ do_bash() {
 db_url() {
   _app=$1
 
-  _database=$(cat "$HOME/db_$_app")
-  _database_pw=$(cat "$HOME/pass_$_app")
+  _database=$(cat "$MARIADB_HOME/db_$_app")
+  _database_pw=$(cat "$MARIADB_HOME/pass_$_app")
 
   echo "mysql2://${_database}:${_database_pw}@${private_ip}:${port}/${_database}"
 }
@@ -83,13 +82,13 @@ database_name() {
 }
 
 migrate() {
-  if [[ ! -f "$HOME/version" ]]; then
-    cd "$HOME"
+  if [[ ! -f "$MARIADB_HOME/version" ]]; then
+    cd "$MARIADB_HOME"
     _files=$(ls pass_* 2> /dev/null)
     for f in $_files; do
       _app_to_migrate=$(echo "$f" | cut -d _ -f 2)
       _database=$(database_name "$_app_to_migrate")
-      echo "$_database" > "$HOME/db_$_app_to_migrate"
+      echo "$_database" > "$MARIADB_HOME/db_$_app_to_migrate"
 
       if [[ -d "$DOKKU_ROOT/$_app_to_migrate" ]]; then
         dokku config:unset "$_app_to_migrate" DATABASE_URL
@@ -97,30 +96,30 @@ migrate() {
     done
 
   fi
-  echo "$version" > "$HOME/version"
+  echo "$version" > "$MARIADB_HOME/version"
 }
 
 env_for() {
   if [[ -n "$1" ]]; then
     _app=$1
-    if [[ -f "$HOME/db_$_app" ]]; then
+    if [[ -f "$MARIADB_HOME/db_$_app" ]]; then
       _url=$(db_url "$APP")
-    elif [[ -f "$HOME/link_$_app" ]]; then
-      _app=$(cat "$HOME/link_$_app")
+    elif [[ -f "$MARIADB_HOME/link_$_app" ]]; then
+      _app=$(cat "$MARIADB_HOME/link_$_app")
       _url=$(db_url "$_app")
     fi
 
     if [[ -n "$_url" ]]; then
-      if [[ -f "$HOME/db_$_app" ]]&&[[ -f "$HOME/pass_$_app" ]]; then
-        _database=$(cat "$HOME/db_$_app")
-        _database_pw=$(cat "$HOME/pass_$_app")
+      if [[ -f "$MARIADB_HOME/db_$_app" ]]&&[[ -f "$MARIADB_HOME/pass_$_app" ]]; then
+        _database=$(cat "$MARIADB_HOME/db_$_app")
+        _database_pw=$(cat "$MARIADB_HOME/pass_$_app")
 
         echo "-e DATABASE_URL=$_url -e MARIADB_URL=$_url -e DB_TYPE=mysql -e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=$_database -e DB_PASS=$_database_pw"
       fi
     fi
   else
     _database="mysql"
-    _database_pw=$(cat "$HOME/admin_pw")
+    _database_pw=$(cat "$MARIADB_HOME/admin_pw")
 
     echo "-e DB_HOST=$private_ip -e DB_PORT=$port -e DB_NAME=$_database -e DB_USER=root -e DB_PASS=$_database_pw"
 
@@ -140,7 +139,7 @@ restart_apps() {
   echo "-----> Restarting applications"
   _apps=()
 
-  cd "$HOME"
+  cd "$MARIADB_HOME"
   _files=$(ls pass_* 2> /dev/null)
   for f in $_files; do
     _apps+=($(echo "$f" | cut -d _ -f 2))
@@ -148,7 +147,7 @@ restart_apps() {
 
   _files=$(ls link_* 2> /dev/null)
   for f in $_files; do
-    _apps+=($(cat "$HOME/$f"))
+    _apps+=($(cat "$MARIADB_HOME/$f"))
   done
 
   _apps=$(echo "${_apps[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
@@ -160,8 +159,8 @@ restart_apps() {
 load_ip_and_container
 
 admin_pw=""
-if [[ -f "$HOME/admin_pw" ]]; then
-  admin_pw=$(cat "$HOME/admin_pw")
+if [[ -f "$MARIADB_HOME/admin_pw" ]]; then
+  admin_pw=$(cat "$MARIADB_HOME/admin_pw")
 fi
 
 case "$1" in
@@ -176,8 +175,8 @@ case "$1" in
     check_app
     check_exists
 
-    database=$(cat "$HOME/db_$APP")
-    database_pw=$(cat "$HOME/pass_$APP")
+    database=$(cat "$MARIADB_HOME/db_$APP")
+    database_pw=$(cat "$MARIADB_HOME/pass_$APP")
 
     manage_ti console "$database" "$database_pw"
     ;;
@@ -187,10 +186,10 @@ case "$1" in
     check_app
     check_exists
 
-    if [[ -f "$HOME/db_$APP" ]]; then
+    if [[ -f "$MARIADB_HOME/db_$APP" ]]; then
       db_url "$APP"
-    elif [[ -f "$HOME/link_$APP" ]]; then
-      APP=$(cat "$HOME/link_$APP")
+    elif [[ -f "$MARIADB_HOME/link_$APP" ]]; then
+      APP=$(cat "$MARIADB_HOME/link_$APP")
       db_url "$APP"
     fi
     ;;
@@ -201,10 +200,10 @@ case "$1" in
 
     new_password=$(openssl rand -base64 32|base64)
     database=$(database_name "$APP")
-    echo $database > "$HOME/db_$APP"
-    echo $new_password > "$HOME/pass_$APP"
-    chmod 700 "$HOME/db_$APP"
-    chmod 700 "$HOME/pass_$APP"
+    echo $database > "$MARIADB_HOME/db_$APP"
+    echo $new_password > "$MARIADB_HOME/pass_$APP"
+    chmod 700 "$MARIADB_HOME/db_$APP"
+    chmod 700 "$MARIADB_HOME/pass_$APP"
 
     manage create "$database" "$admin_pw" "$new_password"
     ;;
@@ -213,11 +212,11 @@ case "$1" in
     check_app
     check_exists
 
-    database=$(cat "$HOME/db_$APP")
+    database=$(cat "$MARIADB_HOME/db_$APP")
     manage delete "$database" "$admin_pw"
 
-    rm -f "$HOME/db_$APP"
-    rm -f "$HOME/pass_$APP"
+    rm -f "$MARIADB_HOME/db_$APP"
+    rm -f "$MARIADB_HOME/pass_$APP"
 
     ;;
 
@@ -251,7 +250,7 @@ case "$1" in
       echo "Mariadb container already running with ID: ${id}"
     else
       echo "-----> Starting MariaDB server"
-      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" "$db_image" start
+      docker run -d -p 127.0.0.1:3306:3306 -v "$MARIADB_HOME/data:/var/lib/mysql" "$db_image" start
     fi
     restart_apps
     ;;
@@ -270,7 +269,7 @@ case "$1" in
     if [[ "$id" != "" ]]; then
       echo "Mariadb container already running with ID: ${id}"
     else
-      docker run -d -p 127.0.0.1:3306:3306 -v "$HOME/data":"/var/lib/mysql" "$db_image" init "$admin_pw"
+      docker run -d -p 127.0.0.1:3306:3306 -v "$MARIADB_HOME/data:/var/lib/mysql" "$db_image" init "$admin_pw"
     fi
     ;;
 
@@ -286,14 +285,14 @@ case "$1" in
     check_app
     check_exists
 
-    database=$(cat "$HOME/db_$APP")
+    database=$(cat "$MARIADB_HOME/db_$APP")
 
     name=$(openssl rand -base64 32|base64)
     manage dump "$database" "$name" "$admin_pw"
 
-    if [[ -f "$HOME/shared/$name" ]]; then
-      cat "$HOME/shared/$name"
-      rm -f "$HOME/shared/$name"
+    if [[ -f "$MARIADB_HOME/shared/$name" ]]; then
+      cat "$MARIADB_HOME/shared/$name"
+      rm -f "$MARIADB_HOME/shared/$name"
     fi
     ;;
 
@@ -302,13 +301,13 @@ case "$1" in
     check_app
     check_exists
 
-    database=$(cat "$HOME/db_$APP")
+    database=$(cat "$MARIADB_HOME/db_$APP")
 
     name=$(openssl rand -base64 32|base64)
-    cat - > "$HOME/shared/$name"
+    cat - > "$MARIADB_HOME/shared/$name"
 
     manage restore "$database" "$name" "$admin_pw"
-    rm -f "$HOME/shared/$name"
+    rm -f "$MARIADB_HOME/shared/$name"
     ;;
 
   mariadb:status)
@@ -329,8 +328,8 @@ case "$1" in
     check_app
     check_exists
 
-    if [[ ! -f "$HOME/link_$3" ]]; then
-      echo "$APP" > "$HOME/link_$3"
+    if [[ ! -f "$MARIADB_HOME/link_$3" ]]; then
+      echo "$APP" > "$MARIADB_HOME/link_$3"
 
       restart_app $3
     else
@@ -343,8 +342,8 @@ case "$1" in
     check_app
     check_exists
 
-    if [[ -f "$HOME/link_$APP" ]]; then
-      rm -f "$HOME/link_$APP"
+    if [[ -f "$MARIADB_HOME/link_$APP" ]]; then
+      rm -f "$MARIADB_HOME/link_$APP"
     fi
 
     restart_app $APP
@@ -354,27 +353,27 @@ case "$1" in
     ;;
 
   mariadb:install)
-    if [[ -d "$HOME" ]]; then
+    if [[ -d "$MARIADB_HOME" ]]; then
       migrate
-      echo "Mariadb data already exist in "$HOME", installation aborded "
+      echo "Mariadb data already exist in $MARIADB_HOME, installation aborded "
     fi
 
-    if [[ ! -d "$HOME" ]]; then
-      mkdir -p "$HOME/data"
-      mkdir -p "$HOME/shared"
+    if [[ ! -d "$MARIADB_HOME" ]]; then
+      mkdir -p "$MARIADB_HOME/data"
+      mkdir -p "$MARIADB_HOME/shared"
 
-      echo "$version" > "$HOME/version"
+      echo "$version" > "$MARIADB_HOME/version"
 
-      docker run "$db_image" cmd "cd /var/lib/mysql && tar -cp ./" | tar -x -C "$HOME/data/" -f -
+      docker run "$db_image" cmd "cd /var/lib/mysql && tar -cp ./" | tar -x -C "$MARIADB_HOME/data/" -f -
       docker run "$db_image" cmd "rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql"
       docker run "$db_image" cmd "chown -R mysql:mysql /var/lib/mysql"
 
-      if [[ ! -f "$HOME/admin_pw" ]]; then
+      if [[ ! -f "$MARIADB_HOME/admin_pw" ]]; then
         admin_pw=$(openssl rand -base64 32|base64)
-        echo $admin_pw > "$HOME/admin_pw"
+        echo $admin_pw > "$MARIADB_HOME/admin_pw"
 
-        chown -R dokku: "$HOME"
-        chmod 700 "$HOME/admin_pw"
+        chown -R dokku: "$MARIADB_HOME"
+        chmod 700 "$MARIADB_HOME/admin_pw"
 
         if [[ ! -z "$DOKKU_DEV" ]]; then
           ./commands mariadb:init
