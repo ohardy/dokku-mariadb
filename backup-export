@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 shopt -s nullglob
-VERSION="$1"
 BASE_DIR="$2"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 _path=".o_mariadb"
