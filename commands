@@ -3,7 +3,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 _path=".o_mariadb"
 version="1.4"
-db_image="ohardy/mariadb:latest"
+db_image="ohardy/mariadb"
 
 APP=$2
 MARIADB_HOME="$DOKKU_ROOT/$_path"
