@@ -391,7 +391,7 @@ case "$1" in
     if [[ -d "$DIR/.git" ]]; then
       pushd "$DIR"
       dokku mariadb:stop
-      sudo git pull
+      git pull
       docker rmi "$db_image"
       docker pull "$db_image"
       dokku mariadb:migrate
